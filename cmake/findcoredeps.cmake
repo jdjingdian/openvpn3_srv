@@ -98,6 +98,10 @@ function(add_core_dependencies target)
     find_package(lz4 REQUIRED)
     target_link_libraries(${target} lz4::lz4)
 
+    # ldns use for query dns srv record
+    find_package(ldns REQUIRED)
+    target_link_libraries(${target} ldns::ldns)
+
     add_ssl_library(${target})
 
     if (APPLE)

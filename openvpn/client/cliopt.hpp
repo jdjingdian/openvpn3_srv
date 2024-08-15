@@ -723,6 +723,7 @@ class ClientOptions : public RC<thread_unsafe_refcount>
         "tun-mtu-extra",   /* (only really used in tap in OpenVPN 2.x)*/
         "udp-mtu",         /* Alias for link-mtu */
         "user",
+        "remote-srv"
     };
 
     std::unordered_set<std::string> settings_serverOnlyOptions = {

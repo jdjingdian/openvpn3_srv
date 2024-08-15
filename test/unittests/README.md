@@ -5,7 +5,7 @@ framework.
 
 ## Building/running the unit tests ##
 Before building the unit tests themselves, you should build the dependencies
-as described in the [README.rst](../../README.rst).
+as described in the [README.rst](../../ORIGIN_README.rst).
 
 The unit test cmake files assume here that the deps directory is on the same
 level as the openvpn3 directory unless overridden by the DEP_DIR variable.

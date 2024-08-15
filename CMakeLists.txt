@@ -50,10 +50,10 @@ if (ENABLE_DOXYGEN)
         "*/googletest-src/*"
         "${PROJECT_SOURCE_DIR}/deps/*")
 
-    # Use README.rst as the Doxygen main page
-    # Due to some doxygen oddities, it rejects processing README.rst, but a .md file is fine
+    # Use ORIGIN_README.rst as the Doxygen main page
+    # Due to some doxygen oddities, it rejects processing ORIGIN_README.rst, but a .md file is fine
     # So we copy it into our build tree as a .md file and use that
-    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/README.rst"
+    configure_file("${CMAKE_CURRENT_SOURCE_DIR}/ORIGIN_README.rst"
         "${CMAKE_CURRENT_BINARY_DIR}/doxygen/mainpage.md"
         COPYONLY)
     set(DOXYGEN_USE_MDFILE_AS_MAINPAGE "${CMAKE_CURRENT_BINARY_DIR}/doxygen/mainpage.md")

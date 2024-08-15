@@ -51,6 +51,8 @@
 #include <openvpn/log/sessionstats.hpp>
 #include <openvpn/client/async_resolve.hpp>
 
+#include <ldns/ldns.h>
+
 #if OPENVPN_DEBUG_REMOTELIST >= 1
 #define OPENVPN_LOG_REMOTELIST(x) OPENVPN_LOG(x)
 #else
@@ -249,6 +251,7 @@ class RemoteList : public RC<thread_unsafe_refcount>
         const std::string remote = "remote";
         const std::string proto = "proto";
         const std::string port = "port";
+        const std::string srv = "remote-srv";
     };
 
     // Used to index into remote list items and their address(es).
@@ -485,6 +488,11 @@ class RemoteList : public RC<thread_unsafe_refcount>
         // defaults
         const Protocol default_proto = get_proto(opt, Protocol(Protocol::UDPv4));
         const std::string default_port = get_port(opt, "1194");
+        const std::string srv_domain = get_srv_domain(opt, "");
+
+        if(srv_domain != ""){
+            OPENVPN_LOG("DNS SRV domain present: " << srv_domain);
+        }
 
         // handle remote, port, and proto at the top-level
         if (!(flags & CONN_BLOCK_ONLY))
@@ -911,6 +919,16 @@ class RemoteList : public RC<thread_unsafe_refcount>
         return port;
     }
 
+    std::string get_srv_domain(const OptionList& opt, const std::string &default_domain){
+        // parse "srv" option if present
+        const Option *o = opt.get_ptr(directives.srv);
+        if(!o){
+            return default_domain;
+        }
+        std::string srv = o->get(1, 128);
+        return srv;
+    }
+
     Protocol get_proto(const OptionList &opt, const Protocol &default_proto)
     {
         // parse "proto" option if present
@@ -956,8 +974,62 @@ class RemoteList : public RC<thread_unsafe_refcount>
             randomize_host(*e);
             if (conn_block)
                 conn_block->new_item(*e);
+
+            std::string srv_domain = get_srv_domain(opt, "");
+            if(srv_domain != ""){
+                int port = query_srv_port(srv_domain);
+                if(port > 0){
+                    OPENVPN_LOG("SRV domain exist, override server port from [ " << e->server_port << "] to [" << port << "]");
+                    e->server_port = std::to_string(port);
+                }
+            }
+
             list.push_back(e);
         }
+    }
+
+    int query_srv_port(std::string srv_domain){
+        int srv_port = -1;
+        ldns_resolver *res;
+        ldns_pkt *p_srv;
+        ldns_status s;
+        size_t i;
+
+        // use system default dns server
+        s = ldns_resolver_new_frm_file(&res, NULL);
+        if (s != LDNS_STATUS_OK) {
+            OPENVPN_LOG("LDNS resolver create failed");
+            return -1;
+        }
+
+        ldns_resolver_set_retry(res, 1); /* don't want to wait too long */
+
+        p_srv = ldns_resolver_query(res, ldns_dname_new_frm_str(srv_domain.c_str()), LDNS_RR_TYPE_SRV, LDNS_RR_CLASS_IN, LDNS_RD);
+
+        if(p_srv){
+            ldns_rr_list* srv;
+            srv = ldns_pkt_rr_list_by_type(p_srv, LDNS_RR_TYPE_SRV, LDNS_SECTION_ANSWER);
+            if(srv){
+                size_t record_count = ldns_rr_list_rr_count(srv);
+                for (i = 0; i < record_count; i ++) {
+                    ldns_rr *rr;
+                    rr = ldns_rr_list_rr(srv, i);
+                    if (rr != NULL) {
+                        char *host;
+                        srv_port = ldns_rdf2native_int16(ldns_rr_rdf(rr, 2));
+                        host = ldns_rdf2str(ldns_rr_rdf(rr, 3));
+                        printf("class %d, ttl %d, priority %d, weight %d, port %d, host %s \n",
+                               ldns_rr_get_class(rr), ldns_rr_ttl(rr), ldns_rdf2native_int16(ldns_rr_rdf(rr, 0)),
+                               ldns_rdf2native_int16(ldns_rr_rdf(rr, 1)), srv_port, host);
+                        free(host);
+                    }
+                }
+            }
+        }else{
+            OPENVPN_LOG("SRV query failed");
+        }
+        ldns_resolver_deep_free(res);
+        return srv_port;
     }
 
     void unsupported_in_connection_block(const OptionList &options, const std::string &option)
