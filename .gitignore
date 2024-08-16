@@ -7,3 +7,5 @@ out
 .vscode
 tags*
 build
+cmake-build-debug/
+.idea/
