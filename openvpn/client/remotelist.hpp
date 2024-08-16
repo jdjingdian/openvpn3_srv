@@ -297,6 +297,7 @@ class RemoteList : public RC<thread_unsafe_refcount>
         size_t item_ = 0;
         size_t item_addr_ = 0;
     };
+    std::string srv_domain = "";
 
   public:
     // Used for errors occurring after initial options processing,
@@ -488,10 +489,11 @@ class RemoteList : public RC<thread_unsafe_refcount>
         // defaults
         const Protocol default_proto = get_proto(opt, Protocol(Protocol::UDPv4));
         const std::string default_port = get_port(opt, "1194");
-        const std::string srv_domain = get_srv_domain(opt, "");
+        const std::string srv = get_srv_domain(opt, "");
 
-        if(srv_domain != ""){
-            OPENVPN_LOG("DNS SRV domain present: " << srv_domain);
+        if(srv != ""){
+            OPENVPN_LOG("DNS SRV domain present: " << srv);
+            srv_domain = srv;
         }
 
         // handle remote, port, and proto at the top-level
@@ -696,8 +698,16 @@ class RemoteList : public RC<thread_unsafe_refcount>
     void get_endpoint(EP &endpoint) const
     {
         const Item &item = *list[item_index()];
-        if (!item.get_endpoint(endpoint, index.item_addr()))
+        bool success = item.get_endpoint(endpoint, index.item_addr());
+        if(success && srv_domain != ""){
+            int port = query_srv_port(srv_domain);
+            if(port > 0){
+                OPENVPN_LOG("SRV domain exist, override server port to [" << port << "]");
+                endpoint.port(port);
+            }
+        }else{
             throw remote_list_error("current remote server endpoint is undefined");
+        }
     }
 
     // return true if object has at least one connection entry
@@ -974,21 +984,11 @@ class RemoteList : public RC<thread_unsafe_refcount>
             randomize_host(*e);
             if (conn_block)
                 conn_block->new_item(*e);
-
-            std::string srv_domain = get_srv_domain(opt, "");
-            if(srv_domain != ""){
-                int port = query_srv_port(srv_domain);
-                if(port > 0){
-                    OPENVPN_LOG("SRV domain exist, override server port from [ " << e->server_port << "] to [" << port << "]");
-                    e->server_port = std::to_string(port);
-                }
-            }
-
             list.push_back(e);
         }
     }
 
-    int query_srv_port(std::string srv_domain){
+    int query_srv_port(std::string srv_domain) const{
         int srv_port = -1;
         ldns_resolver *res;
         ldns_pkt *p_srv;
