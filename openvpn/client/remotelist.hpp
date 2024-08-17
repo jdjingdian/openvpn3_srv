@@ -995,11 +995,18 @@ class RemoteList : public RC<thread_unsafe_refcount>
         ldns_status s;
         size_t i;
 
-        // use system default dns server
+        // use system default dns server, as /etc/resolv.conf
         s = ldns_resolver_new_frm_file(&res, NULL);
         if (s != LDNS_STATUS_OK) {
             OPENVPN_LOG("LDNS resolver create failed");
-            return -1;
+            // Windows don't have /etc/resolv.conf, so we need to specify a namesever for ldns
+            res = ldns_resolver_new();
+            ldns_rdf *nameserver = ldns_rdf_new_frm_str(LDNS_RDF_TYPE_A, "114.114.114.114");
+            if(!nameserver){
+                OPENVPN_LOG("LDNS resolver create with nameserver failed, unable to query srv");
+                return -1;
+            }
+            (void)ldns_resolver_push_nameserver(res, nameserver);
         }
 
         ldns_resolver_set_retry(res, 1); /* don't want to wait too long */
