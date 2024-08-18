@@ -1,5 +1,5 @@
 # 支持DNS SRV记录的 OpenVPN 3 核心库
-You can find English version here [OpenVPN 3 with support for SRV record](README_EN.md)
+You can find English version here [OpenVPN 3 with support for SRV record](README_EN.md), English doc still work in progress.
 
 原版的 README 请访问 [原版README](ORIGIN_README.rst)
 
@@ -50,6 +50,7 @@ cd openvpn3_srv && mkdir build && cd build
 ```
 
 #### 对于 ARM64 Apple Silicon 架构的 mac 设备
+> 我安装的ldns版本号是1.8.4， 请自行根据版本号替换文件夹目录
 ```shell
 cmake -DOPENSSL_ROOT_DIR=/opt/homebrew/opt/openssl -DCMAKE_PREFIX_PATH=/opt/homebrew ../ -DLDNS_INCLUDE_DIR=/opt/homebrew/Cellar/ldns/1.8.4/include
 cmake --build .
@@ -83,14 +84,18 @@ cd openvpn3_srv && mkdir build && cd build
 编译依赖 OpenSSL 的 OpenVPN 3 库 ( 需要mbedTLS的话可以参考原版编译教程 )
 ```shell
 cd openvpn3_srv && mkdir build && cd build
-cmake -GNinja ..
+cmake -GNinja .. -DLDNS_INCLUDE_DIR=/usr/include/
 cmake --build .
 ctest # Run Unit Tests 这一步似乎并不一定要执行
 ```
 
-### 在 Windows 上使用 MSVC 编译 OpenVPN 3
+### 在 Windows X64 上编译与使用
+由于 Windows 平台的编译与使用与 macOS / Linux 环境有较大不同，请查看 [Windows 平台编译与使用教程](WINDOWS_USAGE.md)
 
-## 测试运行
+
+## 使用 OpenVPN 3 SRV
+请参考上面的文档，尝试自己编译该项目，或者使用项目 release 页面提供的编译好的 cli 程序。
+
 相比原版 OpenVPN, 本仓库需要在 ovpn 配置文件中增加一行 remote-srv 的配置，remote-srv 指向你域名的 SRV 记录，改记录应该记录你当前公网的端口信息。
 remote 部分需要填写一个域名和一个随机的端口号，因为当 remote-srv 配置存在且能正确查询时，remote 配置的端口号信息会被覆盖。yourserver.com 需要指向当前你设备的公网IP。
 
@@ -130,10 +135,16 @@ xxx
 </key>
 ```
 
-我的 OpenVPN 服务端部署在 Mikrotik 路由器上，似乎只能用 AES-256-CBC，因此连接时需要带上`-Q` 配置
+由于我的 OpenVPN 服务端部署在 Mikrotik 路由器上，似乎只能用 AES-256-CBC，因此连接时需要带上`-Q` 配置
+
 > --non-preferred-algorithms, -Q: Enables non preferred data channel algorithms
 
 运行命令
 ```shell
-sudo ./test/ovpncli/ovpncli -u username -p "password" -z "key_password" profile.ovpn -L -Q
+sudo ./test/ovpncli/ovpncli -u username -p "password" -z "key_password" profile.ovpn -Q
 ```
+
+理论上这样就可以成功连接，并能 ping 通服务端了。
+
+## 感谢
+感谢 [Natter](https://github.com/MikeWang000000/Natter)、[natmap](https://github.com/heiher/natmap)、[Lucky](https://github.com/gdy666/lucky) 等项目，让非公网 IP 的用户更轻松地实现通过 TCP 打洞的方式获得连回家里服务的能力。
