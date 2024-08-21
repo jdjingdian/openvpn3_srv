@@ -1,4 +1,4 @@
-find_path(LDNS_INCLUDE_DIR NAMES ldns.h)
+find_path(LDNS_INCLUDE_DIR NAMES ldns/ldns.h)
 find_library(LDNS_LIBRARY NAMES ldns)
 
 include(FindPackageHandleStandardArgs)
