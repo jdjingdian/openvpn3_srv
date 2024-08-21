@@ -93,6 +93,8 @@ sudo cp libldns.dll.a /usr/lib
 
 进入仓库并配置 `VCPKG_ROOT` 环境变量, 指向之前你克隆的 vcpkg 的根目录即可
 
+> 目前 Linux 与 macOS 的编译命令与官方原版一致，Windows 版本仍需手动指定 `LDNS_INCLUDE_DIR` 才能正常编译
+
 ```shell
 export VCPKG_ROOT=/home/magicdian/magicdata/vcpkg # 改成你自己的
 cd openvpn3_srv # 进入项目根目录

@@ -50,16 +50,16 @@ cd openvpn3_srv && mkdir build && cd build
 ```
 
 #### 对于 ARM64 Apple Silicon 架构的 mac 设备
-> 我安装的ldns版本号是1.8.4， 请自行根据版本号替换文件夹目录
+> 我安装的ldns版本号是1.8.4， 通过brew安装的可以自动搜索到 ldns 目录
 ```shell
-cmake -DOPENSSL_ROOT_DIR=/opt/homebrew/opt/openssl -DCMAKE_PREFIX_PATH=/opt/homebrew ../ -DLDNS_INCLUDE_DIR=/opt/homebrew/Cellar/ldns/1.8.4/include
+cmake -DOPENSSL_ROOT_DIR=/opt/homebrew/opt/openssl -DCMAKE_PREFIX_PATH=/opt/homebrew ../
 cmake --build .
 ```
 
 #### 对于 Intel 架构的 mac设备
-> 由于我手上暂时没有 Intel 芯片的 mac，所以DLDNS_INCLUDE_DIR指向的目录可能不准确，如果这个编译命令不正确，麻烦提 issue 告诉我正确的路径
+> 由于我手上暂时没有 Intel 芯片的 mac，如果这个编译命令不正确，麻烦提 issue 告诉我
 ```shell
-cmake -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl  -DCMAKE_PREFIX_PATH=/usr/local/opt ../ -DLDNS_INCLUDE_DIR=/opt/homebrew/Cellar/ldns/1.8.4/include
+cmake -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl  -DCMAKE_PREFIX_PATH=/usr/local/opt ../
 cmake --build .
 ```
 
@@ -84,7 +84,7 @@ cd openvpn3_srv && mkdir build && cd build
 编译依赖 OpenSSL 的 OpenVPN 3 库 ( 需要mbedTLS的话可以参考原版编译教程 )
 ```shell
 cd openvpn3_srv && mkdir build && cd build
-cmake -GNinja .. -DLDNS_INCLUDE_DIR=/usr/include/
+cmake -GNinja ..
 cmake --build .
 ctest # Run Unit Tests 这一步似乎并不一定要执行
 ```
